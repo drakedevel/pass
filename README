@@ -1,0 +1,23 @@
+Usage: pass.py words.txt <num words in password> [<N> [<mode> [quiet]]]
+
+words.txt is generated from the Google 1-gram dataset. Most of the
+1-grams which were found in /usr/share/dict words and matched
+/^[a-z]{3,8}$/ and were recorded in descending order of frequency.
+
+Two modes of password generation are provided, random and
+controlled. In random mode, words are selected at random from the top
+N words in words.txt. In controlled mode, words are selected from the
+top N words in words.txt such that no two words come from the same
+"batch" of words -- i.e. it is impossible to to select the three most
+common English words with any reasonable N.
+
+Random mode provides slightly higher entropy (a few bits) but you may
+end up with a password that can be cracked by an attacker using a
+lower N (i.e., your password may be substantially earlier in a
+brute-force search). Controlled mode eliminates this possibility at
+the expense of a small amount of total entropy, and should be your
+default choice unless you have a good reason.
+
+Passing "quiet" suppresses the entropy estimation output (useful for
+scripts).
+
