@@ -1,46 +1,73 @@
 #!/usr/bin/env python
+"""Dictionary-based password generator.
+
+Usage: pass.py [options]
+
+Options:
+  -h --help               Show this help text
+  -d --dictionary=<path>  Specify a non-default dictionary
+  -n --length=N           Specify number of words to use [default: 4]
+  -v --verbose            Print entropy estimate
+  --complex               Bypass complexity requirements
+  --truncate=SIZE         Truncate dictionary to specified size
+  --uncontrolled          Generate a naively-random password from the list
+
+The default mode ensures words are spread throughout the list, slightly
+reducing absolute entropy but generally improving password memorability if the
+dictionary is ordered by frequency.
+"""
 import Crypto.Random.random as random
 import math
-import sys
+import os
+from docopt import docopt
 
-def main(wordlist, word_count, candidate_count = 8192, mode = "controlled", quiet = None):
-    # Normalize inputs
-    word_count = int(word_count)
-    candidate_count = int(candidate_count)
-    if mode not in ('controlled', 'random'):
-        raise Exception("Unknown mode '%s'" % mode)
+
+def main():
+    # Normalize arguments
+    args = docopt(__doc__)
+    word_count = int(args['--length'])
+
+    # Read and transform dictionary file
+    if args['--dictionary']:
+        dict_path = args['--dictionary']
+    else:
+        dict_path = os.path.join(os.path.dirname(__file__), 'words.txt')
+    dictionary = [w for w in [l.strip() for l in open(dict_path)] if w]
+    if args['--truncate']:
+        dictionary = dictionary[:int(args['--truncate'])]
+    elif not args['--dictionary']:
+        # Default truncation for built-in dictionary
+        dictionary = dictionary[:8192]
 
     # Basic entropy calculation
-    if mode == 'controlled':
-        batch_size = candidate_count // word_count
-        entropy = math.log(math.pow(batch_size, word_count) * math.factorial(word_count)) / math.log(2)
+    if args['--uncontrolled']:
+        entropy = math.log(math.pow(len(dictionary), word_count), 2)
     else:
-        entropy = math.log(math.pow(candidate_count, word_count)) / math.log(2)
-    if quiet != "quiet":
-        print "Pessimistic password entropy: %.1f bits" % entropy
-        print "Approximate time to crack at 20k/s: %.1f days" % (math.pow(2, entropy) / 20000 / 60 / 60 / 24)
-
-    # Read in candidate words
-    with open(wordlist, 'r') as wordlist_file:
-        candidates = [s.strip() for s in wordlist_file.readlines()[0:candidate_count]]
+        batch_size = len(dictionary) // word_count
+        entropy = math.log(math.pow(batch_size, word_count) *
+                           math.factorial(word_count), 2)
+    if args['--verbose']:
+        print("Pessimistic password entropy: %.1f bits" % entropy)
+        print("Approximate time to crack at 20k/s: %.1f days" %
+              (math.pow(2, entropy) / 20000 / 60 / 60 / 24))
 
     # Generate password
-    if mode == 'controlled':
+    if args['--uncontrolled']:
+        # Select random words
+        words = [random.choice(dictionary) for i in range(word_count)]
+    else:
         # Generate batches in random order
-        batches = [candidates[i*batch_size:(i+1)*batch_size] for i in range(word_count)]
+        batches = [dictionary[i*batch_size:(i+1)*batch_size]
+                   for i in range(word_count)]
         random.shuffle(batches)
 
         # Select word from each batch
         words = [random.choice(batches[i]) for i in range(word_count)]
-    else:
-        # Select random words
-        words = [random.choice(candidates) for i in range(word_count)]
 
     # Reveal to user
-    print " ".join(words)
+    print(" ".join(words))
+    if args['--complex']:
+        print("Complexified: %s1." % "".join(words).capitalize())
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3 or len(sys.argv) > 6:
-        print "Usage: pass.py <wordlist> <word count> [<candiate words> [<mode> [quiet]]]"
-        sys.exit(1)
-    main(*sys.argv[1:])
+    main()

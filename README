@@ -1,4 +1,4 @@
-Usage: pass.py words.txt <num words in password> [<N> [<mode> [quiet]]]
+See the output of `$ pass.py --help` for detailed usage information.
 
 words.txt is generated from the Google 1-gram dataset. Most of the
 1-grams which were found in /usr/share/dict words and matched
@@ -15,9 +15,5 @@ Random mode provides slightly higher entropy (a few bits) but you may
 end up with a password that can be cracked by an attacker using a
 lower N (i.e., your password may be substantially earlier in a
 brute-force search). Controlled mode eliminates this possibility at
-the expense of a small amount of total entropy, and should be your
-default choice unless you have a good reason.
-
-Passing "quiet" suppresses the entropy estimation output (useful for
-scripts).
-
+the expense of a small amount of total entropy, and is a reasonable
+default choice.
