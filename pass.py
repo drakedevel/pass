@@ -16,10 +16,10 @@ The default mode ensures words are spread throughout the list, slightly
 reducing absolute entropy but generally improving password memorability if the
 dictionary is ordered by frequency.
 """
-import Crypto.Random.random as random
 import math
 import os
 from docopt import docopt
+from secrets import SystemRandom
 
 
 def main():
@@ -52,22 +52,24 @@ def main():
               (math.pow(2, entropy) / 20000 / 60 / 60 / 24))
 
     # Generate password
+    rng = SystemRandom()
     if args['--uncontrolled']:
         # Select random words
-        words = [random.choice(dictionary) for i in range(word_count)]
+        words = [rng.choice(dictionary) for i in range(word_count)]
     else:
         # Generate batches in random order
         batches = [dictionary[i*batch_size:(i+1)*batch_size]
                    for i in range(word_count)]
-        random.shuffle(batches)
+        rng.shuffle(batches)
 
         # Select word from each batch
-        words = [random.choice(batches[i]) for i in range(word_count)]
+        words = [rng.choice(batches[i]) for i in range(word_count)]
 
     # Reveal to user
     print(" ".join(words))
     if args['--complex']:
         print("Complexified: %s1." % "".join(words).capitalize())
+
 
 if __name__ == '__main__':
     main()
